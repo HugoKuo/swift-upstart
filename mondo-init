@@ -1,0 +1,125 @@
+#!/bin/bash    
+#     "Usage: mondo-init [start|stop|restart|status]"
+    
+swift_config_path="/etc/swift/"
+
+#workers list
+accounts=( swift-account-server swift-account-reaper swift-account-replicator swift-account-auditor )
+containers=( swift-container-server swift-container-auditor swift-container-replicator swift-container-sync swift-container-updater )
+objects=( swift-object-server swift-object-auditor swift-object-replicator swift-object-updater )
+proxy=( swift-proxy-server )
+main=( ${accounts[0]} ${containers[0]} ${objects[0]} ${proxy[0]} )
+op=$2
+
+#Function to get exist of conf files
+function check_conf_exist(){
+   local conf=`echo $(echo $1 | tr "-" "\n") | cut -d " " -f 2`-server.conf
+   local path=$swift_config_path
+   [[ -f "$path$conf" ]] && return 0 || return 1 
+}    
+
+#Function to do 
+function operate_cmd(){
+    if [ "$2" == "start" ];then
+    	start $1
+    elif [ "$2" == "stop" ]; then
+    	stop $1
+    elif [ "$2" == "status" ]; then
+    	status $1
+    elif [ "$2" == "restart" ]; then
+    	restart $1
+    fi
+
+}
+
+
+if [ "$1" == "main" -a "$2" ];then
+	for (( i=0 ; i<${#main[@]} ; i++ ))
+	do
+		server=${main[$i]}
+		check_conf_exist $server
+		if [ "$op" == "status" -a "$?" == 0 ];then
+			operate_cmd $server $op
+		elif [ "$op" != "status" ];then
+			if check_conf_exist $server; then
+				operate_cmd $server $op
+ 			else 
+				echo "No Conf file for:" $server
+			fi
+		fi			   	
+	done
+
+elif [ "$1" == "all" ];then
+	
+	for (( i=0 ; i<${#accounts[@]} ; i++ ))
+	do
+		server=${accounts[$i]}
+		check_conf_exist $server
+	        if [ "$op" == "status" -a "$?" == 0 ];then
+        	        operate_cmd $server $op
+	        elif [ "$op" != "status" ];then
+			if check_conf_exist $server; then
+				operate_cmd $server $op
+			else 
+				echo "No Conf file for:" $server
+			fi
+		fi
+	done
+	for (( i=0 ; i<${#containers[@]} ; i++ ))
+        do
+                server=${containers[$i]}
+                check_conf_exist $server
+                if [ "$op" == "status" -a "$?" == 0 ];then
+                        operate_cmd $server $op
+                elif [ "$op" != "status" ];then
+                        if check_conf_exist $server; then
+                                operate_cmd $server $op
+                        else
+                                echo "No Conf file for:" $server
+                        fi
+                fi
+	done
+	for (( i=0 ; i<${#objects[@]} ; i++ ))
+        do
+                server=${objects[$i]}
+                check_conf_exist $server
+                if [ "$op" == "status" -a "$?" == 0 ];then
+                        operate_cmd $server $op
+                elif [ "$op" != "status" ];then
+                        if check_conf_exist $server; then
+                                operate_cmd $server $op
+                        else
+                                echo "No Conf file for:" $server
+                        fi
+                fi
+        done
+	for (( i=0 ; i<${#proxy[@]} ; i++ ))
+        do
+                server=${proxy[$i]}
+                check_conf_exist $server
+                if [ "$op" == "status" -a "$?" == 0 ];then
+                        operate_cmd $server $op
+                elif [ "$op" != "status" ];then
+                        if check_conf_exist $server; then
+                                operate_cmd $server $op
+                        else
+                                echo "No Conf file for:" $server
+                        fi
+                fi
+        done
+else 
+	echo
+	echo "USAGE: mondo-init [main/all] [start/stop/restart/status]"
+	echo 
+	echo "		[main] includes -"
+	echo "			" ${main[@]:0}
+	echo
+	echo "		[all] includes -" 
+	echo "			" ${accounts[@]:0}
+	echo "			" ${containers[@]:0}
+	echo "			" ${objects[@]:0}
+	echo "			" ${proxy[@]:0}
+	echo "			" 
+
+
+fi 
